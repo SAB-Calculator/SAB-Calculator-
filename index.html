@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Steal A Brainrot · Calculator + Trading Hub</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.2s ease;
+        }
+        
+        /* Light Theme (default) */
+        :root {
+            --bg-gradient-start: #f0f4ff;
+            --bg-gradient-end: #e0e7ff;
+            --panel-bg: rgba(255, 255, 255, 0.9);
+            --panel-border: rgba(0, 0, 0, 0.1);
+            --card-bg: #ffffff;
+            --card-border: #e2e8f0;
+            --card-hover: #f1f5f9;
+            --card-selected: #dbeafe;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --input-bg: #ffffff;
+            --input-border: #cbd5e1;
+            --result-bg: #f8fafc;
+            --mut-btn-bg: #f1f5f9;
+            --mut-btn-border: #cbd5e1;
+            --mut-btn-text: #1e293b;
+            --trait-btn-bg: #f1f5f9;
+            --trait-btn-border: #cbd5e1;
+            --trait-btn-text: #1e293b;
+            --selected-trait-bg: #818cf8;
+            --reset-btn-bg: #e2e8f0;
+            --reset-btn-text: #475569;
+            --mode-btn-bg: #f1f5f9;
+            --mode-btn-text: #1e293b;
+            --mode-btn-active: #3b82f6;
+            --scrollbar-track: #e2e8f0;
+            --scrollbar-thumb: #94a3b8;
+            --trade-accent: #10b981;
+        }
+        
+        /* Dark Theme */
+        body.dark {
+            --bg-gradient-start: #0a0f1c;
+            --bg-gradient-end: #0f172a;
+            --panel-bg: rgba(18, 25, 45, 0.9);
+            --panel-border: rgba(255, 255, 255, 0.1);
+            --card-bg: #0f172a;
+            --card-border: #1e2a4a;
+            --card-hover: #1e293b;
+            --card-selected: #1e3a5f;
+            --text-primary: #e0e7ff;
+            --text-secondary: #cbd5e6;
+            --text-muted: #94a3b8;
+            --input-bg: #0f172a;
+            --input-border: #2d3a5e;
+            --result-bg: #030712;
+            --mut-btn-bg: #0f172a;
+            --mut-btn-border: #2d3a5e;
+            --mut-btn-text: #cbd5e6;
+            --trait-btn-bg: #0f172a;
+            --trait-btn-border: #2d3a5e;
+            --trait-btn-text: #cbd5e6;
+            --selected-trait-bg: #7c3aed;
+            --reset-btn-bg: #1e293b;
+            --reset-btn-text: #94a3b8;
+            --mode-btn-bg: #0f172a;
+            --mode-btn-text: #cbd5e6;
+            --mode-btn-active: #2563eb;
+            --scrollbar-track: #0f172a;
+            --scrollbar-thumb: #3b82f6;
+            --trade-accent: #34d399;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .header-left h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #3b82f6, #a855f7);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin: 0;
+        }
+        .header-left p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin: 0.25rem 0 0 0;
+        }
+        .header-right {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+        }
+        .theme-toggle, .donate-btn, .trade-nav-btn {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 3rem;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(10px);
+            text-decoration: none;
+        }
+        .trade-nav-btn.active {
+            background: var(--mode-btn-active);
+            color: white;
+            border-color: #60a5fa;
+        }
+        .theme-toggle:hover, .donate-btn:hover, .trade-nav-btn:hover {
+            opacity: 0.8;
+            transform: scale(0.98);
+        }
+        .donate-btn {
+            background: #003087;
+            color: white;
+            border: none;
+        }
+        body.dark .donate-btn {
+            background: #1a4b8c;
+        }
+        
+        /* Main App Layout: two columns for calculator, full width for trading */
+        .main-app {
+            margin-top: 0.5rem;
+        }
+        .page {
+            display: none;
+            animation: fadeIn 0.25s ease;
+        }
+        .page.active-page {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+        
+        /* Trading page specific styles */
+        .listings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        .trade-card {
+            background: var(--card-bg);
+            border-radius: 1.5rem;
+            padding: 1.25rem;
+            border: 1px solid var(--card-border);
+            transition: transform 0.1s ease, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .trade-card:hover {
+            border-color: var(--trade-accent);
+            transform: translateY(-2px);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-wrap: wrap;
+            margin-bottom: 0.75rem;
+        }
+        .username-tag {
+            font-weight: 700;
+            background: var(--mut-btn-bg);
+            padding: 0.2rem 1rem;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+        }
+        .time-left {
+            font-size: 0.7rem;
+            background: var(--result-bg);
+            padding: 0.2rem 0.7rem;
+            border-radius: 50px;
+            color: var(--text-muted);
+        }
+        .brainrot-name-lg {
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin: 0.5rem 0 0.2rem;
+            background: linear-gradient(135deg, #fbbf24, #f97316);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .mutation-badge {
+            background: #4d2e1e;
+            padding: 0.25rem 0.9rem;
+            border-radius: 40px;
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin: 0.4rem 0;
+            color: #ffe0b5;
+        }
+        .traits-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin: 0.7rem 0;
+        }
+        .trait-pill {
+            background: var(--mut-btn-bg);
+            padding: 0.2rem 0.7rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        .offer-want-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            border-top: 1px dashed var(--card-border);
+            padding-top: 0.7rem;
+            margin: 0.7rem 0;
+            font-size: 0.85rem;
+        }
+        .btn-sm {
+            background: var(--mut-btn-bg);
+            border: 1px solid var(--input-border);
+            padding: 0.35rem 1rem;
+            border-radius: 60px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        .btn-sm:hover {
+            background: var(--mode-btn-active);
+            color: white;
+        }
+        .empty-message {
+            text-align: center;
+            padding: 3rem;
+            background: var(--card-bg);
+            border-radius: 2rem;
+            color: var(--text-muted);
+        }
+        .form-card {
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--panel-border);
+        }
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.2rem;
+            align-items: flex-end;
+        }
+        .form-group {
+            flex: 1;
+            min-width: 150px;
+        }
+        label {
+            display: block;
+            font-size: 0.7rem;
+            margin-bottom: 0.3rem;
+            opacity: 0.8;
+            color: var(--text-secondary);
+        }
+        input, select, textarea {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            padding: 0.6rem 1rem;
+            border-radius: 2rem;
+            color: var(--text-primary);
+            font-family: inherit;
+            outline: none;
+        }
+        .traits-input-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .add-trait-btn {
+            background: var(--mode-btn-active);
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 3rem;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+        }
+        .trait-tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-top: 0.6rem;
+        }
+        .trait-tag {
+            background: var(--selected-trait-bg);
+            border-radius: 2rem;
+            padding: 0.2rem 0.7rem;
+            display: inline-flex;
+            gap: 0.5rem;
+            align-items: center;
+            font-size: 0.75rem;
+            color: white;
+        }
+        .remove-trait {
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: #ffb28b;
+            font-weight: bold;
+            margin-left: 0.3rem;
+        }
+        .btn-primary {
+            background: var(--mode-btn-active);
+            border: none;
+            padding: 0.7rem 1.8rem;
+            border-radius: 3rem;
+            font-weight: bold;
+            color: white;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .nav-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--panel-border);
+            padding-bottom: 0.5rem;
+        }
+        .tab-btn {
+            background: transparent;
+            border: none;
+            font-weight: 600;
+            font-size: 1rem;
+            padding: 0.5rem 1.5rem;
+            border-radius: 40px;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+        .tab-btn.active {
+            background: var(--mode-btn-active);
+            color: white;
+        }
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 2rem;
+            opacity: 0.6;
+            color: var(--text-muted);
+        }
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+        @media (max-width: 768px) {
+            .calculator-grid { grid-template-columns: 1fr; }
+        }
+        /* reuse original classes for calculator panel */
+        .panel { background: var(--panel-bg); backdrop-filter: blur(10px); border-radius: 1.5rem; padding: 1.5rem; border: 1px solid var(--panel-border); }
+        .panel h2 { color: var(--text-secondary); font-size: 1.3rem; margin-bottom: 1rem; border-bottom: 2px solid #3b82f6; display: inline-block; }
+        .items-list { max-height: 450px; overflow-y: auto; }
+        .item-card { background: var(--card-bg); border-radius: 1rem; padding: 0.75rem 1rem; margin-bottom: 0.5rem; cursor: pointer; border: 1px solid var(--card-border); display: flex; justify-content: space-between; }
+        .item-card.selected { background: var(--card-selected); border-color: #3b82f6; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <div class="header-left">
+            <h1>🧠 Steal A Brainrot Hub</h1>
+            <p>Calculator + 24h Brainrot Trading (1 mutation + infinite traits)</p>
+        </div>
+        <div class="header-right">
+            <a href="https://paypal.me/EgoBM" target="_blank" class="donate-btn">💰 Donate via PayPal</a>
+            <button class="theme-toggle" id="themeToggleBtn">🌙 Dark Mode</button>
+        </div>
+    </div>
+
+    <!-- Main navigation between Calculator and Trading -->
+    <div class="nav-tabs">
+        <button class="tab-btn active" data-page="calc">📊 Calculator</button>
+        <button class="tab-btn" data-page="trade">🧬 Brainrot Trading (24h)</button>
+    </div>
+
+    <!-- CALCULATOR PAGE (original functionality, slightly adapted) -->
+    <div id="calc-page" class="page active-page">
+        <div class="calculator-grid">
+            <div class="panel">
+                <h2>📦 1. Select Brainrot</h2>
+                <div class="mode-toggle" style="display:flex; gap:1rem; margin-bottom:1rem;">
+                    <button id="presetModeBtn" class="mode-btn active">📋 Preset List</button>
+                    <button id="customModeBtn" class="mode-btn">✏️ Custom Income</button>
+                </div>
+                <div id="presetSection">
+                    <input type="text" id="searchBrainrot" class="search-box" placeholder="Search brainrot..." style="width:100%; padding:0.75rem;
